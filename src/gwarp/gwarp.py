@@ -218,6 +218,8 @@ def gwarp(args):
         if not os.path.exists(dst_folder):
             os.makedirs(dst_folder)
 
+    idx_mask = None
+
     # START LOOP on src files
     for name in src_names:
         name_split = os.path.splitext(os.path.basename(name))
@@ -282,7 +284,8 @@ def gwarp(args):
         image = image.mapim( idx, interpolate=interp)
         
         if flattenAlpha:
-            image = image.flatten(background=noData)
+            idx_mask = idx_mask if idx_mask is not None else (idx > [xSize, ySize])
+            image =  idx_mask.ifthenelse(noData,image.flatten(background=noData))
 
         write_to_file(image, output, args.co, projection, geotransform, noData=noData)
 
