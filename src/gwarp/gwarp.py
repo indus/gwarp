@@ -44,13 +44,12 @@ def gwarp(args):
     src_multi = src_count > 1
 
     
-    srcNodataDir = None if args.srcNodata is not None else {} 
+    srcNodataDic = None if args.srcNodata is not None else {} 
 
     if args.vii == None:
         # gdal read files; get max size and projection/geotransform
 
         xSize = ySize = -1
-
 
         for name in src_names:
             dataset = gdal.Open(name, gdal.GA_ReadOnly)
@@ -59,8 +58,9 @@ def gwarp(args):
                 ySize = dataset.RasterYSize
                 projection   = dataset.GetProjection()
                 geotransform = dataset.GetGeoTransform()
-            if srcNodataDir is not None:
-                srcNodataDir[name] = dataset.GetRasterBand(1).GetNoDataValue()
+            if srcNodataDic is not None:
+                srcNodataDic[name] = dataset.GetRasterBand(1).GetNoDataValue()
+           
 
         if args.vs:
             xSize = args.vs[0]
@@ -88,8 +88,9 @@ def gwarp(args):
 
         # create vips index
         _logger.info(f'Creating index: {xSize}x{ySize} type:{vips_index_type}')
+        
         index = pyvips.Image.xyz(xSize, ySize)
-
+        
         if ltMaxUInt16:
             index = index.cast('ushort')
             
@@ -125,6 +126,7 @@ def gwarp(args):
                                     format='MEM',
                                     outputType = gdal_index_warp_type,
                                     resampleAlg = gdal_resample,
+                                    #srcNodata = maxUInt,
                                     dstNodata = maxUInt,
                                     outputBounds = args.outputBounds,
                                     outputBoundsSRS = args.outputBoundsSRS,
@@ -155,6 +157,7 @@ def gwarp(args):
 
         # np2vips
         index = pyvips.Image.new_from_memory(np_index.data, width, height, bands, vips_index_type)
+        
 
         # write the index file
         if args.vio:
@@ -181,10 +184,10 @@ def gwarp(args):
             xSize = int(metadata["SrcXSize"])
             ySize = int(metadata["SrcYSize"])
 
-        if srcNodataDir is not None:
+        if srcNodataDic is not None:
             for name in src_names:
                 dataset = gdal.Open(name, gdal.GA_ReadOnly)
-                srcNodataDir[name] = dataset.GetRasterBand(1).GetNoDataValue()
+                srcNodataDic[name] = dataset.GetRasterBand(1).GetNoDataValue()
 
         index = pyvips.Image.new_from_file(args.vii)
 
@@ -250,7 +253,7 @@ def gwarp(args):
         if args.srcNodata is not None:
             srcNodata = args.srcNodata
         else:
-            srcNodata = [srcNodataDir[name]] if srcNodataDir[name] is not None else None
+            srcNodata = [srcNodataDic[name]] if srcNodataDic[name] is not None else None
 
         if srcNodata is not None:
             srcNodataSingle = len(srcNodata) == 1
