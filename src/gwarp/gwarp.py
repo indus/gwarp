@@ -52,6 +52,7 @@ def gwarp(args):
         xSize = ySize = -1
 
         for name in src_names:
+            print(name)
             dataset = gdal.Open(name, gdal.GA_ReadOnly)
             if (dataset.RasterXSize > xSize or dataset.RasterYSize > ySize ):
                 xSize = dataset.RasterXSize
@@ -284,7 +285,7 @@ def gwarp(args):
         image = image.mapim( idx, interpolate=interp)
         
         if flattenAlpha:
-            idx_mask = idx_mask if idx_mask is not None else (idx > [xSize, ySize])
+            idx_mask = idx_mask if idx_mask is not None else (idx > [image.width, image.height]).bandor()
             image =  idx_mask.ifthenelse(noData,image.flatten(background=noData))
 
         write_to_file(image, output, args.co, projection, geotransform, noData=noData)
