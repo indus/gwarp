@@ -8,8 +8,8 @@ import logging
 import sys
 import os
 import glob
-from osgeo import gdal
 import numpy as np
+from osgeo import gdal
 
 from gwarp import __version__
 
@@ -41,7 +41,6 @@ def gwarp(args):
         print(f'{args.src}: No such file or directory')
         return
 
-    
     src_multi = src_count > 1
 
     
@@ -207,9 +206,11 @@ def gwarp(args):
     if args.dst:
         name_split = os.path.splitext(os.path.basename(args.dst))
         dst_name = name_split[0]
-        dst_suffix = f'_{name_split[0]}' if src_multi else ''
+        dst_suffix = f'_{name_split[0]}' if name_split[0] != '' and src_multi else ''
         dst_ext = name_split[1]
         dst_folder = os.path.dirname(args.dst)
+        if dst_folder == '':
+            dst_folder = '.'
 
         if not os.path.exists(dst_folder):
             os.makedirs(dst_folder)
@@ -407,19 +408,17 @@ Additional info on resampling and interpolation methods
     gdal_group.add_argument('-co', dest="co", metavar='<NAME=VALUE>*', action='append',  help='create options (more info in the epilog)')
     vips_group = parser.add_argument_group('VIPS')
     vips_group.add_argument('--vips', help='path to the VIPS bin directory (usefull if VIPS is not added to PATH; e.g. on Windows)')
-    vips_group.add_argument('--vio', dest="vio", help='index file output', metavar='srcindex')
-    vips_group.add_argument('--vii', dest="vii", help='index file input', metavar='dstindex')
+    vips_group.add_argument('--vio', dest="vio", help='index file output', metavar='dstindex')
+    vips_group.add_argument('--vii', dest="vii", help='index file input', metavar='srcindex')
     gdal_group.add_argument('--vs', dest="vs", metavar=('<width>', '<height>'), type=int, nargs=2, help='explicitly set src width and height of index')
     vips_group.add_argument('--vi', dest='v_inter', choices=['nearest', 'bilinear', 'bicubic', 'lbb', 'nohalo', 'vsqbs'], help="interpolation method (more info in the epilog)")
     args = parser.parse_args(args)
 
     if args.srcNodata is not None:
         args.srcNodata = list(map(parse_nif, tuple(args.srcNodata)))
-        print(args.srcNodata)
 
     if args.dstNodata is not None:
         args.dstNodata = parse_nif(args.dstNodata)
-        print(args.dstNodata)
 
     coDict = {}
     if args.co:
