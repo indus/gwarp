@@ -72,7 +72,8 @@ def gwarp(args):
             return 
 
         # select proper types and interpolation methods for GDAL, Numpy & VIPS
-        maxUInt16 = 2**16-1
+        maxUInt16 = np.iinfo(np.uint16).max
+        maxFloat32 = np.finfo(np.float32).max
         ltMaxUInt16 = (xSize < maxUInt16 and ySize < maxUInt16)
 
         maxUInt = maxUInt16 if ltMaxUInt16 else 2**32-1
@@ -80,10 +81,12 @@ def gwarp(args):
         np_index_type = 'uint16' if ltMaxUInt16 else 'uint32'
         gdal_index_type = gdal.GDT_UInt16 if ltMaxUInt16 else gdal.GDT_UInt32
         gdal_index_warp_type = gdal.GDT_Float32
+        dstNodataMax = maxFloat32
         vips_index_type = 'float'
 
         if args.resampleAlg == 'near' or args.resampleAlg == None:
             gdal_index_warp_type = gdal_index_type
+            dstNodataMax = maxUInt16
             vips_index_type = 'ushort' if ltMaxUInt16 else 'uint'
             
 
@@ -128,7 +131,7 @@ def gwarp(args):
                                     outputType = gdal_index_warp_type,
                                     resampleAlg = gdal_resample,
                                     #srcNodata = maxUInt,
-                                    dstNodata = maxUInt,
+                                    dstNodata = dstNodataMax,
                                     outputBounds = args.outputBounds,
                                     outputBoundsSRS = args.outputBoundsSRS,
                                     xRes = args.xyRes[0] if args.xyRes != None else None,
